@@ -1,4 +1,5 @@
 // components/PurpleEliteSoldier.tsx
+import type { ReactElement } from "react";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
@@ -155,7 +156,7 @@ function buildCharacter(): CharacterGroup {
 
 type PointerLikeEvent = PointerEvent | TouchEvent;
 
-export default function PurpleEliteSoldier(): JSX.Element {
+export default function PurpleEliteSoldier(): ReactElement {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const [ready, setReady] = useState<boolean>(false);
 
