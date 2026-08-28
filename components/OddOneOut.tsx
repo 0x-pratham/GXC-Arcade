@@ -18,16 +18,17 @@ interface OddOneOutProps {
   onGameOver: (score: number) => void;
 }
 
-// Complex geometric and visual pairs for a premium brain-training feel
-const ICON_PAIRS = [
-  [Hexagon, Octagon], 
-  [Square, Squircle], 
-  [Sun, SunDim], 
-  [Cloud, CloudRain], 
-  [MessageCircle, MessageSquare], 
-  [Shield, ShieldAlert], 
-  [AlignJustify, AlignLeft], 
-  [Battery, BatteryMedium]
+// 🧠 TIERED COGNITIVE POOLS
+// Easy: Obvious visual differences
+const EASY_PAIRS = [
+  [Sun, SunDim], [Cloud, CloudRain], 
+  [Battery, BatteryMedium], [Square, Squircle]
+];
+
+// Hard: Subtle geometric differences requiring high focus
+const HARD_PAIRS = [
+  [Hexagon, Octagon], [MessageCircle, MessageSquare], 
+  [Shield, ShieldAlert], [AlignJustify, AlignLeft]
 ];
 
 export default function OddOneOut({ onGameOver }: OddOneOutProps) {
@@ -39,34 +40,43 @@ export default function OddOneOut({ onGameOver }: OddOneOutProps) {
   // Grid Data
   const [items, setItems] = useState<any[]>([]);
   const [oddIndex, setOddIndex] = useState<number>(-1);
-  const [gridSize, setGridSize] = useState(2); // 2x2 init
+  const [gridSize, setGridSize] = useState(2); 
   const [wobbleError, setWobbleError] = useState(false);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const generateLevel = useCallback((currentLevel: number) => {
-    // Determine grid size based on level (Max 6x6 for mobile usability)
-    let size = 2;
-    if (currentLevel > 1) size = 3;
-    if (currentLevel > 3) size = 4;
-    if (currentLevel > 6) size = 5;
-    if (currentLevel > 10) size = 6;
+    // ⚡ THE UNPREDICTABILITY ALGORITHM ⚡
     
+    // 1. Rhythm-Breaking Grid Size Fluctuation
+    let possibleSizes = [2, 3];
+    if (currentLevel >= 3 && currentLevel <= 6) possibleSizes = [3, 4, 5];
+    if (currentLevel > 6) possibleSizes = [4, 5, 6];
+    
+    // 15% Curveball Chance: Throw a completely unexpected grid size to break rhythm
+    if (currentLevel > 4 && Math.random() > 0.85) {
+      possibleSizes = Math.random() > 0.5 ? [2, 3] : [6]; 
+    }
+    
+    const size = possibleSizes[Math.floor(Math.random() * possibleSizes.length)];
     setGridSize(size);
     const totalItems = size * size;
 
-    // Pick a random icon pair
-    const pairIndex = Math.floor(Math.random() * ICON_PAIRS.length);
-    // Randomize which one is the "normal" vs "odd"
-    const isReversed = Math.random() > 0.5;
-    const normalItem = isReversed ? ICON_PAIRS[pairIndex][1] : ICON_PAIRS[pairIndex][0];
-    const oddItem = isReversed ? ICON_PAIRS[pairIndex][0] : ICON_PAIRS[pairIndex][1];
+    // 2. Dynamic Cognitive Load (Pair Selection)
+    // Randomly spike the difficulty by pulling from the HARD pool early, or dropping an EASY pair late
+    const forceHardMode = currentLevel > 3 && Math.random() > 0.4;
+    const activePool = forceHardMode ? HARD_PAIRS : EASY_PAIRS;
+    
+    const pairIndex = Math.floor(Math.random() * activePool.length);
+    const isReversed = Math.random() > 0.5; // Randomize which one is the odd one out
+    
+    const normalItem = isReversed ? activePool[pairIndex][1] : activePool[pairIndex][0];
+    const oddItem = isReversed ? activePool[pairIndex][0] : activePool[pairIndex][1];
 
-    // Pick the random spot for the odd one
+    // 3. Placement
     const oddSpot = Math.floor(Math.random() * totalItems);
     setOddIndex(oddSpot);
 
-    // Fill the grid
     const newItems = Array(totalItems).fill(normalItem);
     newItems[oddSpot] = oddItem;
     setItems(newItems);
@@ -111,8 +121,9 @@ export default function OddOneOut({ onGameOver }: OddOneOutProps) {
     if (timeLeft === 0 || hasEnded) return;
 
     if (index === oddIndex) {
-      // Correct!
-      const points = level * 100;
+      // Correct! Score scales with current grid complexity
+      const complexityBonus = gridSize * 20;
+      const points = (level * 50) + complexityBonus;
       setScore((prev) => prev + points);
       
       const nextLevel = level + 1;
@@ -123,8 +134,8 @@ export default function OddOneOut({ onGameOver }: OddOneOutProps) {
       setWobbleError(true);
       setTimeout(() => setWobbleError(false), 400); 
       
-      setTimeLeft((prev) => Math.max(0, prev - 2)); // -2 seconds
-      setScore((prev) => Math.max(0, prev - 50));   // -50 points
+      setTimeLeft((prev) => Math.max(0, prev - 2)); 
+      setScore((prev) => Math.max(0, prev - 50));   
     }
   };
 
@@ -160,7 +171,7 @@ export default function OddOneOut({ onGameOver }: OddOneOutProps) {
       {/* 🎮 Game Area */}
       <div className="flex-1 w-full flex flex-col items-center justify-center relative">
         <motion.div 
-          key={level} // Re-animate on level change
+          key={level} 
           initial={{ scale: 0.96, opacity: 0 }}
           animate={{ scale: 1, opacity: 1, x: wobbleError ? [-8, 8, -8, 8, 0] : 0 }}
           transition={{ duration: 0.25 }}
@@ -176,7 +187,7 @@ export default function OddOneOut({ onGameOver }: OddOneOutProps) {
               key={`${level}-${index}`}
               whileTap={{ scale: 0.85, backgroundColor: "#f4effc" }}
               onClick={() => handleItemClick(index)}
-              className={`bg-white rounded-[1rem] shadow-sm border border-[#c7a6f3]/20 flex items-center justify-center text-[#220849] hover:border-[#5f2396]/50 hover:shadow-md transition-all ${wobbleError ? 'bg-red-50/50' : ''}`}
+              className={`bg-white rounded-[1rem] shadow-sm border border-[#c7a6f3]/20 flex items-center justify-center text-[#220849] hover:border-[#5f2396]/50 hover:shadow-md transition-all ${wobbleError ? 'bg-red-50/50 border-red-200' : ''}`}
             >
               <IconComponent 
                 size={getIconSize()} 
@@ -201,7 +212,6 @@ export default function OddOneOut({ onGameOver }: OddOneOutProps) {
           </motion.div>
         )}
       </div>
-
     </div>
   );
 }
