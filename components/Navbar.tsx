@@ -8,9 +8,11 @@ import { logoutUser } from "../lib/actions";
 import { motion } from "framer-motion";
 import AuthModal from "./AuthModal";
 import { Trophy } from "lucide-react";
+import { useRouter } from "next/navigation"; // <-- IMPORTED HERE
 
 export default function Navbar() {
   const [user, setUser] = useState<any>(null);
+  const router = useRouter(); // <-- ROUTER INITIALIZED
   
   // Modal State Control
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -33,6 +35,7 @@ export default function Navbar() {
   const handleLogout = async () => {
     try {
       await logoutUser();
+      router.push("/"); // <-- REDIRECT TO LANDING PAGE ADDED HERE
     } catch (error) {
       console.error("Logout failed", error);
     }
