@@ -2,17 +2,32 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import { 
+  Hexagon, Octagon, 
+  Square, Squircle, 
+  Sun, SunDim, 
+  Cloud, CloudRain, 
+  MessageCircle, MessageSquare, 
+  Shield, ShieldAlert,
+  AlignJustify, AlignLeft,
+  Battery, BatteryMedium
+} from "lucide-react";
 
 interface OddOneOutProps {
   onGameOver: (score: number) => void;
 }
 
-// Pairs of similar-looking emojis to confuse the player
-const EMOJI_PAIRS = [
-  ["😀", "😃"], ["🍎", "🍅"], ["🚗", "🚕"], ["🌟", "⭐"], 
-  ["👀", "👁️"], ["🍔", "🥪"], ["🌙", "🌜"], ["⚽", "🏀"],
-  ["🟩", "🟢"], ["📝", "📄"], ["🐶", "🐺"], ["🔥", "☄️"]
+// Complex geometric and visual pairs for a premium brain-training feel
+const ICON_PAIRS = [
+  [Hexagon, Octagon], 
+  [Square, Squircle], 
+  [Sun, SunDim], 
+  [Cloud, CloudRain], 
+  [MessageCircle, MessageSquare], 
+  [Shield, ShieldAlert], 
+  [AlignJustify, AlignLeft], 
+  [Battery, BatteryMedium]
 ];
 
 export default function OddOneOut({ onGameOver }: OddOneOutProps) {
@@ -22,7 +37,7 @@ export default function OddOneOut({ onGameOver }: OddOneOutProps) {
   const [hasEnded, setHasEnded] = useState(false);
   
   // Grid Data
-  const [items, setItems] = useState<string[]>([]);
+  const [items, setItems] = useState<any[]>([]);
   const [oddIndex, setOddIndex] = useState<number>(-1);
   const [gridSize, setGridSize] = useState(2); // 2x2 init
   const [wobbleError, setWobbleError] = useState(false);
@@ -30,7 +45,7 @@ export default function OddOneOut({ onGameOver }: OddOneOutProps) {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const generateLevel = useCallback((currentLevel: number) => {
-    // Determine grid size based on level (Max 6x6)
+    // Determine grid size based on level (Max 6x6 for mobile usability)
     let size = 2;
     if (currentLevel > 1) size = 3;
     if (currentLevel > 3) size = 4;
@@ -40,9 +55,12 @@ export default function OddOneOut({ onGameOver }: OddOneOutProps) {
     setGridSize(size);
     const totalItems = size * size;
 
-    // Pick a random emoji pair
-    const pairIndex = Math.floor(Math.random() * EMOJI_PAIRS.length);
-    const [normalItem, oddItem] = EMOJI_PAIRS[pairIndex];
+    // Pick a random icon pair
+    const pairIndex = Math.floor(Math.random() * ICON_PAIRS.length);
+    // Randomize which one is the "normal" vs "odd"
+    const isReversed = Math.random() > 0.5;
+    const normalItem = isReversed ? ICON_PAIRS[pairIndex][1] : ICON_PAIRS[pairIndex][0];
+    const oddItem = isReversed ? ICON_PAIRS[pairIndex][0] : ICON_PAIRS[pairIndex][1];
 
     // Pick the random spot for the odd one
     const oddSpot = Math.floor(Math.random() * totalItems);
@@ -66,7 +84,7 @@ export default function OddOneOut({ onGameOver }: OddOneOutProps) {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           if (timerRef.current) clearInterval(timerRef.current);
-          return 0; // Trigger game over in next effect
+          return 0; 
         }
         return prev - 1;
       });
@@ -82,7 +100,7 @@ export default function OddOneOut({ onGameOver }: OddOneOutProps) {
     if (timeLeft === 0 && !hasEnded) {
       setHasEnded(true);
       if (typeof onGameOver === "function") {
-        onGameOver(score);
+        setTimeout(() => onGameOver(score), 400); // Slight delay for UX
       } else {
         console.error("CRITICAL: onGameOver function is missing in OddOneOut!");
       }
@@ -103,57 +121,85 @@ export default function OddOneOut({ onGameOver }: OddOneOutProps) {
     } else {
       // Wrong! Penalty
       setWobbleError(true);
-      setTimeout(() => setWobbleError(false), 400); // Reset wobble
+      setTimeout(() => setWobbleError(false), 400); 
       
       setTimeLeft((prev) => Math.max(0, prev - 2)); // -2 seconds
       setScore((prev) => Math.max(0, prev - 50));   // -50 points
     }
   };
 
+  // Dynamic icon sizing based on grid density
+  const getIconSize = () => {
+    if (gridSize <= 3) return 40;
+    if (gridSize === 4) return 32;
+    if (gridSize === 5) return 24;
+    return 20; // 6x6
+  };
+
   return (
-    <div className="w-full h-full min-h-[450px] flex flex-col items-center justify-between p-2">
+    <div className="w-full h-full min-h-[500px] flex flex-col items-center p-2 sm:p-4">
       
-      {/* Header HUD */}
+      {/* 📊 HUD (Mobile Optimized Glassmorphism) */}
       <div className="w-full flex justify-between items-center z-10 mb-6">
-        <div className="bg-white/80 backdrop-blur px-5 py-2.5 rounded-xl border border-[#c7a6f3]/50 shadow-sm flex gap-4">
-          <span className="text-[#220849] font-bold text-sm tracking-widest uppercase">
-            Time <span className={`ml-2 ${timeLeft <= 5 ? "text-red-500 animate-pulse" : "text-[#5f2396]"}`}>{timeLeft}s</span>
+        <div className="bg-white/70 backdrop-blur-xl px-4 py-2.5 sm:px-5 sm:py-3 rounded-[1.25rem] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-white flex items-center gap-3 sm:gap-4">
+          <span className="text-[#220849]/50 font-bold text-[10px] sm:text-xs tracking-widest uppercase">
+            Time <span className={`ml-1 text-xs sm:text-sm ${timeLeft <= 5 ? "text-rose-500 animate-pulse" : "text-[#220849]"}`}>{timeLeft}s</span>
           </span>
-          <span className="text-[#220849] font-bold text-sm tracking-widest uppercase hidden sm:inline border-l border-[#c7a6f3]/30 pl-4">
-            Level <span className="ml-2 text-[#5f2396]">{level}</span>
+          <div className="w-px h-4 bg-[#220849]/10"></div>
+          <span className="text-[#220849]/50 font-bold text-[10px] sm:text-xs tracking-widest uppercase">
+            Lvl <span className="ml-1 text-xs sm:text-sm text-[#220849]">{level}</span>
           </span>
         </div>
-        <div className="bg-white/80 backdrop-blur px-5 py-2.5 rounded-xl border border-[#c7a6f3]/50 shadow-sm">
-          <span className="text-[#220849] font-bold text-sm tracking-widest uppercase">
-            Score <span className="ml-2 text-[#5f2396]">{score}</span>
+        <div className="bg-white/70 backdrop-blur-xl px-4 py-2.5 sm:px-5 sm:py-3 rounded-[1.25rem] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-white">
+          <span className="text-[#220849]/50 font-bold text-[10px] sm:text-xs tracking-widest uppercase">
+            Score <span className="ml-1 text-xs sm:text-sm text-[#5f2396]">{score}</span>
           </span>
         </div>
       </div>
 
-      {/* Game Area */}
+      {/* 🎮 Game Area */}
       <div className="flex-1 w-full flex flex-col items-center justify-center relative">
         <motion.div 
           key={level} // Re-animate on level change
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1, x: wobbleError ? [-10, 10, -10, 10, 0] : 0 }}
-          transition={{ duration: 0.3 }}
-          className="w-full max-w-md mx-auto aspect-square bg-[#f4effc] border border-[#c7a6f3]/50 rounded-[2rem] p-3 md:p-5 grid gap-2 md:gap-3 shadow-[0_10px_30px_rgba(199,166,243,0.15)]"
+          initial={{ scale: 0.96, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1, x: wobbleError ? [-8, 8, -8, 8, 0] : 0 }}
+          transition={{ duration: 0.25 }}
+          className="w-full max-w-md mx-auto aspect-square bg-white/40 backdrop-blur-md border border-white/60 rounded-[2rem] p-3 sm:p-5 grid shadow-[0_10px_30px_rgba(199,166,243,0.15)]"
           style={{ 
             gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
-            gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))`
+            gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))`,
+            gap: gridSize >= 5 ? '6px' : '10px'
           }}
         >
-          {items.map((emoji, index) => (
+          {items.map((IconComponent, index) => (
             <motion.button
               key={`${level}-${index}`}
-              whileTap={{ scale: 0.9 }}
+              whileTap={{ scale: 0.85, backgroundColor: "#f4effc" }}
               onClick={() => handleItemClick(index)}
-              className="bg-white rounded-xl shadow-sm border border-[#c7a6f3]/30 flex items-center justify-center text-4xl md:text-5xl hover:border-[#5f2396] hover:shadow-md transition-all"
+              className={`bg-white rounded-[1rem] shadow-sm border border-[#c7a6f3]/20 flex items-center justify-center text-[#220849] hover:border-[#5f2396]/50 hover:shadow-md transition-all ${wobbleError ? 'bg-red-50/50' : ''}`}
             >
-              <span className="select-none">{emoji}</span>
+              <IconComponent 
+                size={getIconSize()} 
+                strokeWidth={gridSize >= 5 ? 2.5 : 2} 
+                className="text-[#220849] opacity-80"
+              />
             </motion.button>
           ))}
         </motion.div>
+
+        {/* Start Hint Overlay (Fades out quickly) */}
+        {level === 1 && (
+          <motion.div 
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 0 }}
+            transition={{ delay: 1.5, duration: 1 }}
+            className="absolute bottom-10 pointer-events-none"
+          >
+            <span className="bg-[#220849]/10 px-4 py-2 rounded-full font-mono text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#220849]/60">
+              Tap the anomaly
+            </span>
+          </motion.div>
+        )}
       </div>
 
     </div>
