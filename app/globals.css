@@ -1,26 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz@8..144&display=swap');
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Tailwind v4 format: Configure colors and fonts directly in CSS */
+@theme {
+  --color-arcade-bg: #1b053e;
+  --color-arcade-primary: #6828a2;
+  --color-arcade-secondary: #3d126b;
+  --color-arcade-accent: #c7a6f3;
+  
+  --font-heading: "Times New Roman", serif;
+  --font-body: "Google Sans Flex", sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    @apply bg-arcade-bg text-arcade-accent font-body antialiased;
+    /* App-like scrollbar hiding */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body::-webkit-scrollbar { 
+    display: none; 
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading text-white;
+  }
 }
