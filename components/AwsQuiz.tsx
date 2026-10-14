@@ -36,7 +36,20 @@ const QUESTIONS = [
   { difficulty: "Hard", question: "A food delivery app needs to store menu images, manage customer orders and monitor its application. Which combination best matches the workshop architecture?", options: ["CloudTrail for images, Glacier for orders and IAM for monitoring", "S3 for images, RDS or DynamoDB for orders and CloudWatch for monitoring", "Lambda for image storage, CloudFront for orders and S3 for monitoring", "Route 53 for images, EC2 for database storage and Glacier for monitoring"], answer: 1, explanation: "The workshop describes S3 for images, RDS or DynamoDB for order data and CloudWatch for monitoring." },
 ] as const;
 
+function shuffleQuestions() {
+  const shuffled = [...QUESTIONS];
+
+  // Fisher-Yates shuffle: each play gets a fresh question order.
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  return shuffled;
+}
+
 export default function AwsQuiz() {
+  const [questionOrder, setQuestionOrder] = useState(() => shuffleQuestions());
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [score, setScore] = useState(0);
@@ -48,7 +61,7 @@ export default function AwsQuiz() {
   const [remainingSeconds, setRemainingSeconds] = useState(10);
   const [timedOut, setTimedOut] = useState(false);
 
-  const question = QUESTIONS[current];
+  const question = questionOrder[current];
   const progress = ((current + 1) / QUESTIONS.length) * 100;
   const accuracy = Math.round((score / QUESTIONS.length) * 100);
   const timeLimit = question.difficulty === "Easy" ? 10 : question.difficulty === "Moderate" ? 15 : 20;
@@ -123,6 +136,7 @@ export default function AwsQuiz() {
   }
 
   function restartQuiz() {
+    setQuestionOrder(shuffleQuestions());
     setCurrent(0);
     setSelected(null);
     setTimedOut(false);
@@ -219,7 +233,7 @@ export default function AwsQuiz() {
         </motion.div>
       ) : (
         <motion.div
-          key={current}
+          key={`${attemptId}-${current}`}
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           className="rounded-3xl border border-[#c7a6f3]/40 bg-white p-6 shadow-xl md:p-10"
