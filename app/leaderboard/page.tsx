@@ -275,7 +275,7 @@ export default function LeaderboardPage() {
 
                       {activeTab === "aws" && (
                         <span className="mt-1 text-xs text-[#220849]/50">
-                          / 18
+                          / 20 questions
                         </span>
                       )}
                     </div>
