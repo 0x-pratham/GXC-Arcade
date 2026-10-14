@@ -141,7 +141,7 @@ export default function GameGrid({ games, loading }: GameGridProps) {
                 </div>
               </motion.div>
             ))}
-          </motion.div>
+               </motion.div>
         )}
       </div>
     </section>
