@@ -48,19 +48,20 @@ export default function GameWrapper({ gameId, gameTitle, children }: GameWrapper
 
   // Start ya Play Again logic
   const handleStartSequence = async () => {
-    if (!user) return;
-    setStarting(true);
+  if (!user) return;
+  setStarting(true);
 
-    const result = await deductGameCredit(user.id);
-    
-    if (result.success) {
-      setCredits(result.remaining);
-      setGameState('playing');
-    } else {
-      alert("Insufficient Credits! Please top up to play.");
-    }
-    setStarting(false);
-  };
+  const result = await deductGameCredit(user.id);
+
+  if (result.success) {
+    setCredits(result.remaining ?? null);
+    setGameState("playing");
+  } else {
+    alert("Insufficient Credits! Please top up to play.");
+  }
+
+  setStarting(false);
+};
 
   const handleGameOver = async (score: number) => {
     setFinalScore(score);
