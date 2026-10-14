@@ -30,18 +30,12 @@ export async function registerUser(email: string, password: string, username: st
   return data;
 }
 
-export async function loginUser(identifier: string, password: string) {
-  const value = identifier.trim();
-  const credentials = value.includes("@")
-    ? { email: value.toLowerCase(), password }
-    : { phone: normalizePhoneNumber(value), password };
-  const { data, error } = await supabase.auth.signInWithPassword(credentials);
-  if (error) {
-    if (!value.includes("@") && /phone/i.test(error.message)) {
-      throw new Error("Phone login may not be enabled in Supabase. Enable Phone under Authentication → Sign In / Providers and try again.");
-    }
-    throw error;
-  }
+export async function loginUser(email: string, password: string) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: email.trim().toLowerCase(),
+    password,
+  });
+  if (error) throw error;
   return data;
 }
 
