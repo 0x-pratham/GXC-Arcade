@@ -240,9 +240,22 @@ export default function AwsQuiz() {
 
   async function nextQuestion() {
     if (current !== QUESTIONS.length - 1) {
-      setCurrent((previous) => previous + 1);
+      const nextIndex = current + 1;
+      const nextQuestion = questionOrder[nextIndex];
+      const nextTimeLimit =
+        nextQuestion.difficulty === "Easy"
+          ? 10
+          : nextQuestion.difficulty === "Moderate"
+            ? 15
+            : 20;
+
+      // Reset the timer before rendering the next unanswered question.
+      // Otherwise the timeout effect can see the previous question's 0s
+      // while selected is null and immediately time out the new question.
+      setCurrent(nextIndex);
       setSelected(null);
       setTimedOut(false);
+      setRemainingSeconds(nextTimeLimit);
       return;
     }
 
