@@ -67,64 +67,49 @@ export async function getActiveGames() {
  */
 export async function deductGameCredit(userId: string) {
   try {
-    // 1. Fetch the user's current credit balance
-    const { data: profile, error: fetchError } = await supabase
-      .from("profiles")
-      .select("credits")
-      .eq("id", userId)
-      .single();
-
-    if (fetchError || !profile) {
-      throw new Error("Profile not found");
-    }
-
-    // 2. Prevent negative credits
-    if (profile.credits <= 0) {
+    // Verify the currently authenticated user.
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
       return {
         success: false,
-        message: "Out of credits",
+        message: "Please log in first.",
       };
     }
-
-    // 3. Deduct exactly one credit
-    //
-    // `.select().single()` verifies that the database
-    // actually returned the updated profile row.
-    const { data: updatedProfile, error: updateError } = await supabase
-      .from("profiles")
-      .update({
-        credits: profile.credits - 1,
-      })
-      .eq("id", userId)
-      .select()
-      .single();
-
-    // 4. Database update failed
-    if (updateError) {
-      console.error("Credit update failed:", updateError);
-
-      throw new Error("Database update failed!");
+    // Never allow a client to deduct another user's credits.
+    if (user.id !== userId) {
+      return {
+        success: false,
+        message: "Unauthorized credit deduction.",
+      };
     }
-
-    // 5. No updated row means the update was blocked
-    // or no matching row was available.
-    if (!updatedProfile) {
-      throw new Error(
-        "Blocked by Database Security (RLS)."
-      );
+    // Perform the deduction atomically in PostgreSQL.
+    const { data, error } = await supabase.rpc(
+      "deduct_game_credit"
+    );
+    if (error) {
+      console.error("Credit deduction failed:", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      });
+      return {
+        success: false,
+        message: error.message,
+      };
     }
-
-    // 6. Successfully deducted the credit
     return {
       success: true,
-      remaining: updatedProfile.credits,
+      remaining: data as number,
     };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Credit Error:", error);
-
     return {
       success: false,
-      message: error?.message || "Failed to deduct game credit.",
+      message: "Failed to deduct game credit.",
     };
   }
 }
@@ -292,10 +277,17 @@ export async function getActivePopup() {
     .from("popups")
     .select("*")
     .eq("is_active", true)
-    .single();
+    .limit(1)
+    .maybeSingle();
 
-  if (error && error.code !== "PGRST116") {
-    throw error;
+  if (error) {
+    console.error("Failed to fetch active popup:", {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+    });
+
+    return null;
   }
 
   return data;
