@@ -49,7 +49,12 @@ function GamePlayerContent() {
           return;
         }
 
-        if (data?.title === "AWS Cloud Quest") {\n          router.replace("/aws-quiz");\n          return;\n        }\n\n        setGame(data);
+        if (data?.title === "AWS Cloud Quest") {
+          router.replace("/aws-quiz");
+          return;
+        }
+
+        setGame(data);
       } catch (error) {
         console.error("Unexpected error while fetching game:", error);
         setGame(null);
