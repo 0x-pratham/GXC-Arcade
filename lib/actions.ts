@@ -390,32 +390,12 @@ export async function getAllDetailedScores() {
   return data;
 }
 export async function getAwsLeaderboard() {
-  const { data, error } = await supabase
-    .from("scores")
-    .select(`
-      user_id,
-      score,
-      played_at,
-      profiles ( username )
-    `)
-    .eq("game_id", "796aac6a-6cd4-48c6-af90-518bab836a84")
-    .order("score", { ascending: false })
-    .order("played_at", { ascending: true })
-    .limit(100);
+  const { data, error } = await supabase.rpc("get_public_aws_leaderboard");
 
   if (error) {
-    console.error("Error fetching AWS leaderboard:", error);
-    return [];
+    console.error("Error fetching public AWS leaderboard:", error);
+    throw error;
   }
 
-  // Keep each player's best score.
-  const bestScores = new Map<string, any>();
-
-  for (const entry of data ?? []) {
-    if (!bestScores.has(entry.user_id)) {
-      bestScores.set(entry.user_id, entry);
-    }
-  }
-
-  return Array.from(bestScores.values());
+  return data ?? [];
 }
