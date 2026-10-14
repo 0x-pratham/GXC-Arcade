@@ -24,6 +24,7 @@ interface Game {
 
 function GamePlayerContent() {
   const params = useParams();
+  const router = useRouter();
   const gameId = params?.id;
 
   const [game, setGame] = useState<Game | null>(null);
