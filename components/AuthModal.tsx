@@ -92,7 +92,7 @@ export default function AuthModal({ isOpen, onClose, defaultIsLogin = true }: Au
               {isLogin && (
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#220849]/40 group-focus-within:text-[#5f2396] transition-colors"><User size={18} /></div>
-                  <input type="text" autoComplete="username" inputMode="text" placeholder="Email or phone number" value={identifier} onChange={(e) => setIdentifier(e.target.value)} className={inputClass} required />
+                  <input type="text" autoComplete="username" inputMode="text" type="email" inputMode="email" placeholder="Email address" value={identifier} onChange={(e) => setIdentifier(e.target.value)} className={inputClass} required />
                 </div>
               )}
 
