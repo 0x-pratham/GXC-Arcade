@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   CheckCircle2,
@@ -14,147 +14,26 @@ import { submitScore } from "@/lib/actions";
 const AWS_GAME_ID = "796aac6a-6cd4-48c6-af90-518bab836a84";
 
 const QUESTIONS = [
-  {
-    difficulty: "Easy",
-    question: "Which AWS service provides scalable object storage?",
-    options: ["Amazon EBS", "Amazon S3", "Amazon EC2", "Amazon RDS"],
-    answer: 1,
-    explanation: "Amazon S3 is an object storage service designed to store and retrieve data at scale.",
-  },
-  {
-    difficulty: "Easy",
-    question: "Which AWS service provides virtual servers?",
-    options: ["AWS Lambda", "Amazon DynamoDB", "Amazon EC2", "Amazon CloudFront"],
-    answer: 2,
-    explanation: "Amazon EC2 provides resizable virtual computing capacity in the cloud.",
-  },
-  {
-    difficulty: "Easy",
-    question: "What does IAM help you manage?",
-    options: [
-      "User identities and permissions",
-      "Database backups only",
-      "Website animations",
-      "Physical data centres",
-    ],
-    answer: 0,
-    explanation: "AWS Identity and Access Management controls who can access AWS resources and what actions they can perform.",
-  },
-  {
-    difficulty: "Moderate",
-    question: "An application needs to run code in response to events without managing servers. Which service is most suitable?",
-    options: ["Amazon EC2", "Amazon EBS", "AWS Lambda", "Amazon Redshift"],
-    answer: 2,
-    explanation: "AWS Lambda runs code in response to events without requiring you to manage the underlying servers.",
-  },
-  {
-    difficulty: "Moderate",
-    question: "Which AWS storage service is designed for block storage attached to EC2 instances?",
-    options: ["Amazon S3", "Amazon EBS", "Amazon Glacier", "Amazon EFS"],
-    answer: 1,
-    explanation: "Amazon EBS provides persistent block storage volumes for use with EC2 instances.",
-  },
-  {
-    difficulty: "Moderate",
-    question: "A company wants a managed relational database service. Which AWS service should it consider?",
-    options: ["Amazon DynamoDB", "Amazon S3", "Amazon RDS", "Amazon CloudFront"],
-    answer: 2,
-    explanation: "Amazon RDS simplifies setting up, operating, and scaling relational databases.",
-  },
-  {
-    difficulty: "Moderate",
-    question: "Which service distributes content to users through a global network of edge locations?",
-    options: ["Amazon VPC", "AWS IAM", "Amazon CloudFront", "Amazon EBS"],
-    answer: 2,
-    explanation: "Amazon CloudFront is a content delivery network that caches and delivers content through edge locations.",
-  },
-  {
-    difficulty: "Moderate",
-    question: "What is the primary purpose of an Auto Scaling group?",
-    options: [
-      "Encrypt database records",
-      "Adjust compute capacity based on demand",
-      "Manage DNS records",
-      "Create IAM policies",
-    ],
-    answer: 1,
-    explanation: "Auto Scaling can add or remove compute capacity as demand changes.",
-  },
-  {
-    difficulty: "Moderate",
-    question: "Which AWS service records account activity and API events for auditing?",
-    options: ["Amazon CloudWatch", "AWS CloudTrail", "Amazon Route 53", "AWS Elastic Beanstalk"],
-    answer: 1,
-    explanation: "AWS CloudTrail records AWS account activity, including API calls, for auditing and investigation.",
-  },
-  {
-    difficulty: "Moderate",
-    question: "Which AWS service is primarily used to create isolated virtual networks?",
-    options: ["Amazon VPC", "Amazon S3", "AWS Lambda", "Amazon Rekognition"],
-    answer: 0,
-    explanation: "Amazon VPC lets you provision a logically isolated virtual network in AWS.",
-  },
-  {
-    difficulty: "Moderate",
-    question: "Which pricing option can provide discounted pricing in exchange for a commitment to a consistent usage level?",
-    options: ["On-Demand", "Spot Instances", "Savings Plans", "Free Tier"],
-    answer: 2,
-    explanation: "Savings Plans offer lower prices in exchange for a commitment to a specified amount of eligible usage over a term.",
-  },
-  {
-    difficulty: "Moderate",
-    question: "Under the AWS shared responsibility model, who is generally responsible for configuring IAM permissions?",
-    options: ["AWS exclusively", "The customer", "The internet service provider", "The hardware manufacturer"],
-    answer: 1,
-    explanation: "Customers are responsible for managing their identities, permissions, and access configuration.",
-  },
-  {
-    difficulty: "Hard",
-    question: "An application experiences unpredictable traffic spikes. Which combination can help distribute incoming requests and adjust the number of EC2 instances?",
-    options: ["CloudTrail and EBS", "Load Balancer and Auto Scaling", "Route 53 and Glacier only", "IAM and KMS"],
-    answer: 1,
-    explanation: "A load balancer distributes incoming traffic, while Auto Scaling adjusts compute capacity according to configured policies.",
-  },
-  {
-    difficulty: "Hard",
-    question: "A workload needs a managed NoSQL database with key-value data access. Which service is the best fit?",
-    options: ["Amazon RDS", "Amazon Redshift", "Amazon DynamoDB", "Amazon EFS"],
-    answer: 2,
-    explanation: "Amazon DynamoDB is a managed NoSQL database that supports key-value and document data models.",
-  },
-  {
-    difficulty: "Hard",
-    question: "Which AWS service is designed for data warehousing and analytical queries?",
-    options: ["Amazon Redshift", "Amazon EBS", "AWS IAM", "Amazon Route 53"],
-    answer: 0,
-    explanation: "Amazon Redshift is a data warehousing service designed for analytics across large datasets.",
-  },
-  {
-    difficulty: "Hard",
-    question: "A team wants to define and provision AWS infrastructure using templates. Which service is appropriate?",
-    options: ["AWS CloudTrail", "AWS CloudFormation", "Amazon Polly", "Amazon Transcribe"],
-    answer: 1,
-    explanation: "AWS CloudFormation provisions and manages infrastructure using declarative templates.",
-  },
-  {
-    difficulty: "Hard",
-    question: "Which AWS service helps developers build, train, and deploy machine learning models?",
-    options: ["Amazon Route 53", "Amazon SageMaker", "Amazon EFS", "AWS Shield"],
-    answer: 1,
-    explanation: "Amazon SageMaker provides tools and infrastructure for building, training, and deploying machine learning models.",
-  },
-  {
-    difficulty: "Hard",
-    question: "A company wants to grant an application temporary access to AWS resources without embedding long-term credentials in its code. Which approach is most appropriate?",
-    options: [
-      "Hard-code an IAM user's access keys",
-      "Disable IAM permissions",
-      "Use an IAM role and temporary credentials",
-      "Store credentials in a public S3 bucket",
-    ],
-    answer: 2,
-    explanation: "IAM roles provide temporary credentials and help applications access authorized resources without embedding long-term access keys.",
-  },
+  { difficulty: "Easy", question: "What is cloud computing?", options: ["Storing files only on a personal computer", "Accessing IT resources over the internet on demand", "Building physical computers", "Using the internet only for browsing"], answer: 1, explanation: "Cloud computing lets you access IT resources over the internet when you need them, often paying only for what you use." },
+  { difficulty: "Easy", question: "What does AWS stand for?", options: ["Amazon Web Services", "Advanced Web Systems", "Automated Worldwide Servers", "Amazon Wireless Software"], answer: 0, explanation: "AWS stands for Amazon Web Services, Amazon's cloud computing platform." },
+  { difficulty: "Easy", question: "Which company launched AWS?", options: ["Microsoft", "Google", "Amazon", "IBM"], answer: 2, explanation: "AWS was launched by Amazon in 2006." },
+  { difficulty: "Easy", question: "Which AWS service provides virtual servers?", options: ["AWS Lambda", "Amazon DynamoDB", "Amazon EC2", "Amazon CloudFront"], answer: 2, explanation: "Amazon EC2 provides virtual computing capacity in the cloud." },
+  { difficulty: "Easy", question: "Which AWS service is used to store photos and backups as objects?", options: ["Amazon S3", "AWS Lambda", "Amazon VPC", "AWS CloudTrail"], answer: 0, explanation: "Amazon S3 is object storage commonly used for files such as photos and backups." },
+  { difficulty: "Easy", question: "Which service is commonly used for managed SQL databases?", options: ["Amazon CloudFront", "Amazon EC2", "Amazon RDS", "Amazon Route 53"], answer: 2, explanation: "Amazon RDS is a managed relational database service." },
+  { difficulty: "Easy", question: "What is the main purpose of AWS Lambda?", options: ["Store archived files", "Run code without managing servers directly", "Manage encryption keys", "Register domain names"], answer: 1, explanation: "AWS Lambda runs code in response to events without requiring you to manage servers directly." },
+  { difficulty: "Easy", question: "What does IAM help manage?", options: ["User identities and permissions", "Video streaming quality", "Database backups only", "Physical data centres"], answer: 0, explanation: "AWS IAM helps manage users, roles and permissions." },
+  { difficulty: "Easy", question: "Which service helps deliver content quickly to users around the world?", options: ["Amazon RDS", "AWS CloudTrail", "Amazon CloudFront", "AWS IAM"], answer: 2, explanation: "Amazon CloudFront uses edge locations to deliver content with low latency." },
+  { difficulty: "Easy", question: "What is an AWS Region?", options: ["A single user account", "A geographic area containing AWS infrastructure", "A type of database", "A security policy"], answer: 1, explanation: "A Region is a geographic area where AWS has infrastructure." },
+  { difficulty: "Easy", question: "Which service is used to monitor metrics, logs and alarms?", options: ["Amazon S3", "Amazon DynamoDB", "AWS CloudFormation", "Amazon CloudWatch"], answer: 3, explanation: "Amazon CloudWatch monitors AWS resources and applications using metrics, logs and alarms." },
+  { difficulty: "Easy", question: "What is the purpose of Multi-Factor Authentication (MFA)?", options: ["Add another layer of identity verification", "Increase storage capacity", "Reduce network latency", "Create virtual servers"], answer: 0, explanation: "MFA requires an additional proof of identity and adds a layer of account protection." },
+  { difficulty: "Easy", question: "Which AWS service is designed for inexpensive long-term data archiving?", options: ["Amazon EC2", "Amazon S3 Glacier", "Amazon Route 53", "AWS Lambda"], answer: 1, explanation: "S3 Glacier storage classes are designed for low-cost archival storage." },
+  { difficulty: "Easy", question: "Which certification is listed at the foundational level in the PPT?", options: ["AWS Certified DevOps Engineer – Professional", "AWS Certified Security – Specialty", "AWS Certified Cloud Practitioner", "AWS Certified Solutions Architect – Professional"], answer: 2, explanation: "The workshop lists AWS Certified Cloud Practitioner as a foundational certification." },
+  { difficulty: "Moderate", question: "A website suddenly receives a large amount of traffic. Which combination can help distribute requests and automatically add servers?", options: ["S3 and Glacier", "CloudTrail and IAM", "Load Balancer and Auto Scaling", "RDS and Route 53"], answer: 2, explanation: "A Load Balancer distributes incoming traffic, while Auto Scaling can add or remove EC2 instances as demand changes." },
+  { difficulty: "Moderate", question: "A company wants to keep old invoices at a low storage cost. Which service from the workshop is the best fit?", options: ["Amazon EC2", "Amazon S3 Glacier", "AWS Lambda", "Amazon CloudWatch"], answer: 1, explanation: "The workshop describes Glacier as low-cost storage for archived data." },
+  { difficulty: "Moderate", question: "An administrator wants to find out who deleted a server. Which service should they use?", options: ["Amazon CloudFront", "Amazon EFS", "Amazon SageMaker", "AWS CloudTrail"], answer: 3, explanation: "AWS CloudTrail records account activity and API events for auditing." },
+  { difficulty: "Moderate", question: "A company wants to build and train machine learning models on AWS. Which service should it consider?", options: ["Amazon SageMaker", "Amazon Route 53", "Amazon EBS", "AWS CloudTrail"], answer: 0, explanation: "Amazon SageMaker provides tools for building and training machine learning models." },
+  { difficulty: "Moderate", question: "According to the Shared Responsibility Model, which task is the customer's responsibility?", options: ["Maintaining AWS data centre buildings", "Securing the physical hardware owned by AWS", "Managing access permissions and configuring cloud resources", "Maintaining AWS's global network infrastructure"], answer: 2, explanation: "Customers manage their data, access permissions and configurations, while AWS secures the underlying cloud infrastructure." },
+  { difficulty: "Hard", question: "A food delivery app needs to store menu images, manage customer orders and monitor its application. Which combination best matches the workshop architecture?", options: ["CloudTrail for images, Glacier for orders and IAM for monitoring", "S3 for images, RDS or DynamoDB for orders and CloudWatch for monitoring", "Lambda for image storage, CloudFront for orders and S3 for monitoring", "Route 53 for images, EC2 for database storage and Glacier for monitoring"], answer: 1, explanation: "The workshop describes S3 for images, RDS or DynamoDB for order data and CloudWatch for monitoring." },
 ] as const;
 
 export default function AwsQuiz() {
@@ -166,10 +45,30 @@ export default function AwsQuiz() {
   const [saveMessage, setSaveMessage] = useState("");
   const [saved, setSaved] = useState(false);
   const [attemptId, setAttemptId] = useState(0);
+  const [remainingSeconds, setRemainingSeconds] = useState(10);
+  const [timedOut, setTimedOut] = useState(false);
 
   const question = QUESTIONS[current];
   const progress = ((current + 1) / QUESTIONS.length) * 100;
   const accuracy = Math.round((score / QUESTIONS.length) * 100);
+  const timeLimit = question.difficulty === "Easy" ? 10 : question.difficulty === "Moderate" ? 15 : 20;
+
+  useEffect(() => {
+    if (finished || selected !== null) return;
+    setRemainingSeconds(timeLimit);
+    setTimedOut(false);
+    const timer = window.setInterval(() => {
+      setRemainingSeconds((previous) => Math.max(0, previous - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [current, finished, selected, attemptId, timeLimit]);
+
+  useEffect(() => {
+    if (remainingSeconds === 0 && selected === null && !finished) {
+      setTimedOut(true);
+      setSelected(-1);
+    }
+  }, [remainingSeconds, selected, finished]);
 
   function handleAnswer(index: number) {
     if (selected !== null) return;
@@ -185,6 +84,7 @@ export default function AwsQuiz() {
     if (current !== QUESTIONS.length - 1) {
       setCurrent((previous) => previous + 1);
       setSelected(null);
+      setTimedOut(false);
       return;
     }
 
@@ -225,6 +125,8 @@ export default function AwsQuiz() {
   function restartQuiz() {
     setCurrent(0);
     setSelected(null);
+    setTimedOut(false);
+    setRemainingSeconds(10);
     setScore(0);
     setFinished(false);
     setSaving(false);
@@ -348,6 +250,13 @@ export default function AwsQuiz() {
             />
           </div>
 
+          <div className="mt-5 flex items-center justify-between gap-4 rounded-xl bg-[#f4effc] px-4 py-3">
+            <span className="text-sm font-bold text-[#5f2396]">Time remaining</span>
+            <span role="timer" aria-live="polite" className={`text-lg font-black tabular-nums ${remainingSeconds <= 5 ? "text-red-600" : "text-[#220849]"}`}>
+              {remainingSeconds}s / {timeLimit}s
+            </span>
+          </div>
+
           <h2 className="mb-8 mt-8 text-xl font-bold leading-relaxed text-[#220849] md:text-2xl">
             {question.question}
           </h2>
@@ -379,7 +288,7 @@ export default function AwsQuiz() {
 
                   <span className="flex-1">{option}</span>
 
-                  {selected !== null && isCorrect && (
+                  {selected !== null && selected >= 0 && isCorrect && (
                     <CheckCircle2 className="shrink-0 text-green-600" />
                   )}
 
@@ -402,13 +311,11 @@ export default function AwsQuiz() {
               }`}
             >
               <p className="font-black">
-                {selected === question.answer
-                  ? "Correct! 🎉"
-                  : "Not quite!"}
+                {timedOut ? "Time’s up!" : selected === question.answer ? "Correct! 🎉" : "Not quite!"}
               </p>
 
               <p className="mt-2 text-sm leading-relaxed">
-                {question.explanation}
+                {timedOut ? "You ran out of time for this question. " : ""}{question.explanation}
               </p>
             </motion.div>
           )}
