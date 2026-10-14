@@ -124,7 +124,14 @@ export default function GameGrid({ games, loading }: GameGridProps) {
                   </p>
 
                   {/* Action Button */}
-                  <Link href={`/games/${game.id}`} className="mt-auto block">
+                  <Link
+  href={
+    game.title === "AWS Cloud Quest"
+      ? "/aws-quiz"
+      : `/games/${game.id}`
+  }
+  className="mt-auto block"
+>
                     <div className="flex items-center justify-between w-full bg-[#f4effc] group-hover:bg-[#220849] border border-[#c7a6f3]/50 group-hover:border-[#220849] px-6 py-4 rounded-xl transition-colors duration-300">
                       <span className="font-bold text-[#220849] group-hover:text-white transition-colors text-sm uppercase tracking-wide">
                         Play Game
