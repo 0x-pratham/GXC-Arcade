@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   CheckCircle2,
@@ -9,7 +9,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { submitScore } from "@/lib/actions";
+import { deductGameCredit, submitScore } from "@/lib/actions";
 
 const AWS_GAME_ID = "796aac6a-6cd4-48c6-af90-518bab836a84";
 
@@ -50,6 +50,9 @@ function shuffleQuestions() {
 
 export default function AwsQuiz() {
   const [questionOrder, setQuestionOrder] = useState(() => shuffleQuestions());
+  const [isStarting, setIsStarting] = useState(true);
+  const [creditError, setCreditError] = useState("");
+  const chargedAttemptRef = useRef<number | null>(null);
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [score, setScore] = useState(0);
@@ -61,20 +64,67 @@ export default function AwsQuiz() {
   const [remainingSeconds, setRemainingSeconds] = useState(10);
   const [timedOut, setTimedOut] = useState(false);
 
+  useEffect(() => {
+    // Charge once per quiz attempt, including Play Again. The ref prevents
+    // React Strict Mode's development effect replay from charging twice.
+    if (chargedAttemptRef.current === attemptId) return;
+    chargedAttemptRef.current = attemptId;
+    let cancelled = false;
+
+    async function startAttempt() {
+      setIsStarting(true);
+      setCreditError("");
+
+      try {
+        const {
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+          throw new Error("Please log in before playing.");
+        }
+
+        const result = await deductGameCredit(user.id);
+        if (!result.success) {
+          throw new Error(
+            result.message || "You don't have enough credits to play."
+          );
+        }
+
+        if (!cancelled) setIsStarting(false);
+      } catch (error) {
+        if (!cancelled) {
+          setCreditError(
+            error instanceof Error
+              ? error.message
+              : "Couldn't deduct a game credit. Please try again."
+          );
+          setIsStarting(false);
+        }
+      }
+    }
+
+    startAttempt();
+    return () => {
+      cancelled = true;
+    };
+  }, [attemptId]);
+
   const question = questionOrder[current];
   const progress = ((current + 1) / QUESTIONS.length) * 100;
   const accuracy = Math.round((score / QUESTIONS.length) * 100);
   const timeLimit = question.difficulty === "Easy" ? 10 : question.difficulty === "Moderate" ? 15 : 20;
 
   useEffect(() => {
-    if (finished || selected !== null) return;
+    if (isStarting || creditError || finished || selected !== null) return;
     setRemainingSeconds(timeLimit);
     setTimedOut(false);
     const timer = window.setInterval(() => {
       setRemainingSeconds((previous) => Math.max(0, previous - 1));
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [current, finished, selected, attemptId, timeLimit]);
+  }, [current, finished, selected, attemptId, timeLimit, isStarting, creditError]);
 
   useEffect(() => {
     if (remainingSeconds === 0 && selected === null && !finished) {
@@ -137,6 +187,8 @@ export default function AwsQuiz() {
 
   function restartQuiz() {
     setQuestionOrder(shuffleQuestions());
+    setIsStarting(true);
+    setCreditError("");
     setCurrent(0);
     setSelected(null);
     setTimedOut(false);
@@ -165,7 +217,24 @@ export default function AwsQuiz() {
         </p>
       </div>
 
-      {finished ? (
+      {isStarting ? (
+        <div className="rounded-3xl border border-[#c7a6f3]/40 bg-white p-10 text-center shadow-xl">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[#e2d4f8] border-t-[#5f2396]" />
+          <p className="mt-4 font-semibold text-[#5f2396]">Checking credits and starting your game...</p>
+        </div>
+      ) : creditError ? (
+        <div className="rounded-3xl border border-red-200 bg-white p-8 text-center shadow-xl">
+          <h2 className="text-2xl font-black text-[#220849]">Unable to start game</h2>
+          <p role="alert" className="mt-3 text-red-700">{creditError}</p>
+          <p className="mt-2 text-sm text-[#220849]/60">One credit is required for each play. No quiz questions have been started.</p>
+          <button
+            onClick={restartQuiz}
+            className="mt-6 rounded-xl bg-[#5f2396] px-6 py-3 font-bold text-white transition hover:bg-[#220849]"
+          >
+            Try Again
+          </button>
+        </div>
+      ) : finished ? (
         <motion.div
           key={`result-${attemptId}`}
           initial={{ opacity: 0, y: 20 }}
