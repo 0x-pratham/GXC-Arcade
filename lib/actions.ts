@@ -393,8 +393,16 @@ export async function getAwsLeaderboard() {
   const { data, error } = await supabase.rpc("get_public_aws_leaderboard");
 
   if (error) {
-    console.error("Error fetching public AWS leaderboard:", error);
-    throw error;
+    // Supabase/PostgREST errors often serialize as {} in the browser console.
+    console.error("Error fetching public AWS leaderboard:", {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+    });
+    throw new Error(
+      `AWS leaderboard request failed (${error.code ?? "unknown"}): ${error.message}`
+    );
   }
 
   return data ?? [];
