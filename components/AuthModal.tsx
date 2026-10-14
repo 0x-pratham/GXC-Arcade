@@ -76,15 +76,15 @@ export default function AuthModal({ isOpen, onClose, defaultIsLogin = true }: Au
                 <>
                   <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#220849]/40 group-focus-within:text-[#5f2396] transition-colors"><User size={18} /></div>
-                    <input type="text" autoComplete="username" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} className={inputClass} required />
+                    <input type="text" autoComplete="username" placeholder="Username *" value={username} onChange={(e) => setUsername(e.target.value)} className={inputClass} required />
                   </div>
                   <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#220849]/40 group-focus-within:text-[#5f2396] transition-colors"><Mail size={18} /></div>
-                    <input type="email" autoComplete="email" placeholder="Email address" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} required />
+                    <input type="email" autoComplete="email" placeholder="Email address *" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} required />
                   </div>
                   <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#220849]/40 group-focus-within:text-[#5f2396] transition-colors"><Phone size={18} /></div>
-                    <input type="tel" autoComplete="tel" inputMode="tel" placeholder="Phone number (+919876543210)" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className={inputClass} required />
+                    <input type="tel" autoComplete="tel" inputMode="tel" placeholder="Phone number (+919876543210) *" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className={inputClass} required />
                   </div>
                 </>
               )}
@@ -98,7 +98,7 @@ export default function AuthModal({ isOpen, onClose, defaultIsLogin = true }: Au
 
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#220849]/40 group-focus-within:text-[#5f2396] transition-colors"><Key size={18} /></div>
-                <input type="password" autoComplete={isLogin ? "current-password" : "new-password"} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} required />
+                <input type="password" autoComplete={isLogin ? "current-password" : "new-password"} placeholder={isLogin ? "Password" : "Password *"} value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} required />
               </div>
 
               <button type="submit" disabled={loading} className="w-full bg-[#220849] hover:bg-[#5f2396] text-white py-4 rounded-xl font-bold text-sm uppercase tracking-wider mt-2 transition-all disabled:opacity-70 flex items-center justify-center gap-2 group shadow-[0_5px_15px_rgba(95,35,150,0.2)] hover:shadow-[0_10px_25px_rgba(95,35,150,0.3)]">
