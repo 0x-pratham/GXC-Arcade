@@ -1,4 +1,3 @@
-// components/AuthModal.tsx
 "use client";
 
 import { useState } from "react";
@@ -22,19 +21,17 @@ export default function AuthModal({ isOpen, onClose, defaultIsLogin = true }: Au
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-
     try {
       if (isLogin) {
-        await loginUser(identifier.trim(), password);
+        await loginUser(identifier, password);
       } else {
-        await registerUser(email.trim(), password, username.trim(), phoneNumber.trim());
+        await registerUser(email, password, username, phoneNumber);
       }
       onClose();
       router.push("/dashboard");
@@ -46,12 +43,13 @@ export default function AuthModal({ isOpen, onClose, defaultIsLogin = true }: Au
     }
   };
 
+  const inputClass = "w-full border border-[#c7a6f3]/40 focus:border-[#5f2396] outline-none pl-11 pr-4 py-3.5 rounded-xl text-sm font-medium text-[#220849] bg-white transition-all shadow-sm focus:shadow-md";
+
   return (
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#110320]/50 backdrop-blur-md px-4">
           <div className="absolute inset-0" onClick={onClose}></div>
-
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -59,13 +57,7 @@ export default function AuthModal({ isOpen, onClose, defaultIsLogin = true }: Au
             className="bg-white/95 backdrop-blur-xl w-full max-w-md rounded-[2rem] p-8 relative shadow-[0_0_50px_rgba(95,35,150,0.15)] border border-[#c7a6f3]/40 overflow-hidden"
           >
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#5f2396] to-[#a855f7]"></div>
-
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close authentication dialog"
-              className="absolute top-6 right-6 text-[#220849]/40 hover:text-[#5f2396] transition-colors"
-            >
+            <button type="button" onClick={onClose} aria-label="Close authentication dialog" className="absolute top-6 right-6 text-[#220849]/40 hover:text-[#5f2396] transition-colors">
               <X size={20} />
             </button>
 
@@ -83,124 +75,52 @@ export default function AuthModal({ isOpen, onClose, defaultIsLogin = true }: Au
               {!isLogin && (
                 <>
                   <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#220849]/40 group-focus-within:text-[#5f2396] transition-colors">
-                      <User size={18} />
-                    </div>
-                    <input
-                      type="text"
-                      autoComplete="username"
-                      placeholder="Operator Alias (Username)"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className="w-full border border-[#c7a6f3]/40 focus:border-[#5f2396] outline-none pl-11 pr-4 py-3.5 rounded-xl text-sm font-medium text-[#220849] bg-white transition-all shadow-sm focus:shadow-md"
-                      required
-                    />
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#220849]/40 group-focus-within:text-[#5f2396] transition-colors"><User size={18} /></div>
+                    <input type="text" autoComplete="username" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} className={inputClass} required />
                   </div>
-
                   <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#220849]/40 group-focus-within:text-[#5f2396] transition-colors">
-                      <Phone size={18} />
-                    </div>
-                    <input
-                      type="tel"
-                      autoComplete="tel"
-                      inputMode="tel"
-                      placeholder="Phone number (e.g. +919876543210)"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      className="w-full border border-[#c7a6f3]/40 focus:border-[#5f2396] outline-none pl-11 pr-4 py-3.5 rounded-xl text-sm font-medium text-[#220849] bg-white transition-all shadow-sm focus:shadow-md"
-                      required
-                    />
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#220849]/40 group-focus-within:text-[#5f2396] transition-colors"><Mail size={18} /></div>
+                    <input type="email" autoComplete="email" placeholder="Email address" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} required />
+                  </div>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#220849]/40 group-focus-within:text-[#5f2396] transition-colors"><Phone size={18} /></div>
+                    <input type="tel" autoComplete="tel" inputMode="tel" placeholder="Phone number (+919876543210)" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className={inputClass} required />
                   </div>
                 </>
               )}
 
-              {(!isLogin || identifier.includes("@")) && (
+              {isLogin && (
                 <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#220849]/40 group-focus-within:text-[#5f2396] transition-colors">
-                    <Mail size={18} />
-                  </div>
-                  <input
-                    type="email"
-                    autoComplete="email"
-                    placeholder="Email address"
-                    value={isLogin ? identifier : email}
-                    onChange={(e) => isLogin ? setIdentifier(e.target.value) : setEmail(e.target.value)}
-                    className="w-full border border-[#c7a6f3]/40 focus:border-[#5f2396] outline-none pl-11 pr-4 py-3.5 rounded-xl text-sm font-medium text-[#220849] bg-white transition-all shadow-sm focus:shadow-md"
-                    required={!isLogin || identifier.includes("@")}
-                  />
-                </div>
-              )}
-
-              {isLogin && !identifier.includes("@") && (
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#220849]/40 group-focus-within:text-[#5f2396] transition-colors">
-                    <Phone size={18} />
-                  </div>
-                  <input
-                    type="tel"
-                    autoComplete="username"
-                    inputMode="tel"
-                    placeholder="Email or phone number"
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
-                    className="w-full border border-[#c7a6f3]/40 focus:border-[#5f2396] outline-none pl-11 pr-4 py-3.5 rounded-xl text-sm font-medium text-[#220849] bg-white transition-all shadow-sm focus:shadow-md"
-                    required
-                  />
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#220849]/40 group-focus-within:text-[#5f2396] transition-colors"><User size={18} /></div>
+                  <input type="text" autoComplete="username" inputMode="text" placeholder="Email or phone number" value={identifier} onChange={(e) => setIdentifier(e.target.value)} className={inputClass} required />
                 </div>
               )}
 
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#220849]/40 group-focus-within:text-[#5f2396] transition-colors">
-                  <Key size={18} />
-                </div>
-                <input
-                  type="password"
-                  autoComplete={isLogin ? "current-password" : "new-password"}
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full border border-[#c7a6f3]/40 focus:border-[#5f2396] outline-none pl-11 pr-4 py-3.5 rounded-xl text-sm font-medium text-[#220849] bg-white transition-all shadow-sm focus:shadow-md"
-                  required
-                />
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#220849]/40 group-focus-within:text-[#5f2396] transition-colors"><Key size={18} /></div>
+                <input type="password" autoComplete={isLogin ? "current-password" : "new-password"} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} required />
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-[#220849] hover:bg-[#5f2396] text-white py-4 rounded-xl font-bold text-sm uppercase tracking-wider mt-2 transition-all disabled:opacity-70 flex items-center justify-center gap-2 group shadow-[0_5px_15px_rgba(95,35,150,0.2)] hover:shadow-[0_10px_25px_rgba(95,35,150,0.3)]"
-              >
+              <button type="submit" disabled={loading} className="w-full bg-[#220849] hover:bg-[#5f2396] text-white py-4 rounded-xl font-bold text-sm uppercase tracking-wider mt-2 transition-all disabled:opacity-70 flex items-center justify-center gap-2 group shadow-[0_5px_15px_rgba(95,35,150,0.2)] hover:shadow-[0_10px_25px_rgba(95,35,150,0.3)]">
                 {loading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    <span>Processing...</span>
-                  </div>
+                  <div className="flex items-center gap-2"><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div><span>Processing...</span></div>
                 ) : (
-                  <>
-                    {isLogin ? "Establish Connection" : "Create Profile"}
-                    <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                  </>
+                  <>{isLogin ? "Establish Connection" : "Create Profile"}<ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" /></>
                 )}
               </button>
             </form>
 
             <div className="mt-8 pt-6 border-t border-[#c7a6f3]/20 flex flex-col items-center gap-2 text-xs">
-              <p className="text-[#220849]/60 font-medium">
-                {isLogin ? "No access credentials?" : "Already hold clearance?"}
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setError("");
-                  setIdentifier("");
-                  setEmail("");
-                  setPhoneNumber("");
-                  setPassword("");
-                  setUsername("");
-                }}
-                className="text-[#5f2396] font-bold uppercase tracking-wider hover:text-[#220849] transition-colors"
-              >
+              <p className="text-[#220849]/60 font-medium">{isLogin ? "No access credentials?" : "Already hold clearance?"}</p>
+              <button type="button" onClick={() => {
+                setIsLogin(!isLogin);
+                setError("");
+                setIdentifier("");
+                setEmail("");
+                setPhoneNumber("");
+                setPassword("");
+                setUsername("");
+              }} className="text-[#5f2396] font-bold uppercase tracking-wider hover:text-[#220849] transition-colors">
                 {isLogin ? "Request Registration" : "Initiate Login"}
               </button>
             </div>
