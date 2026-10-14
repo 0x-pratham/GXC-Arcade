@@ -40,7 +40,7 @@ export async function POST(request: Request) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !serviceRoleKey) {
-    console.error("Phone registration requires NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
+    console.error("Registration requires NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
     return NextResponse.json({ error: "Registration is not configured on the server yet." }, { status: 500 });
   }
 
@@ -65,9 +65,7 @@ export async function POST(request: Request) {
   const { data: created, error: createError } = await admin.auth.admin.createUser({
     email,
     password,
-    phone: phoneNumber,
     email_confirm: true,
-    phone_confirm: true,
     user_metadata: { username },
   });
 
@@ -81,8 +79,8 @@ export async function POST(request: Request) {
     }, { status: duplicate ? 409 : 400 });
   }
 
-  // The auth.users trigger creates the profile. Attach the phone number
-  // using the server-only client so public profile policies are not weakened.
+  // The auth.users trigger creates the profile. Save the phone number as
+  // profile contact information only; authentication is email/password only.
   const { error: profileError } = await admin
     .from("profiles")
     .update({ phone_number: phoneNumber })
