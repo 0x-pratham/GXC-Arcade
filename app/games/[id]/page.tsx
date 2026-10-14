@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import GameWrapper from "../../../components/GameWrapper";
 import GameAuthGuard from "../../../components/GameAuthGuard";
@@ -24,6 +24,7 @@ interface Game {
 
 function GamePlayerContent() {
   const params = useParams();
+  const router = useRouter();
   const gameId = params?.id;
 
   const [game, setGame] = useState<Game | null>(null);
@@ -49,6 +50,11 @@ function GamePlayerContent() {
           return;
         }
 
+        if (data?.title === "AWS Cloud Quest") {
+          router.replace("/aws-quiz");
+          return;
+        }
+
         setGame(data);
       } catch (error) {
         console.error("Unexpected error while fetching game:", error);
@@ -59,7 +65,7 @@ function GamePlayerContent() {
     };
 
     fetchGame();
-  }, [gameId]);
+  }, [gameId, router]);
 
   // Loading State
   if (loading) {
