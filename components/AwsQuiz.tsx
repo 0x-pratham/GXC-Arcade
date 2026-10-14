@@ -51,6 +51,8 @@ function shuffleQuestions() {
 export default function AwsQuiz() {
   const [questionOrder, setQuestionOrder] = useState(() => shuffleQuestions());
   const [isStarting, setIsStarting] = useState(true);
+  const [hasRestored, setHasRestored] = useState(false);
+  const [activeUserId, setActiveUserId] = useState<string | null>(null);
   const [creditError, setCreditError] = useState("");
   const chargedAttemptRef = useRef<number | null>(null);
   const [current, setCurrent] = useState(0);
@@ -65,9 +67,102 @@ export default function AwsQuiz() {
   const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function restoreProgress() {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (cancelled) return;
+
+        if (!user) {
+          setCreditError("Please log in before playing.");
+          setIsStarting(false);
+          setHasRestored(true);
+          return;
+        }
+
+        setActiveUserId(user.id);
+        const storageKey = `gxc-aws-quiz-progress:${user.id}`;
+        const raw = window.localStorage.getItem(storageKey);
+
+        if (raw) {
+          try {
+            const saved = JSON.parse(raw);
+            const validOrder = Array.isArray(saved.questionOrder)
+              && saved.questionOrder.length === QUESTIONS.length
+              && saved.questionOrder.every((index: unknown) =>
+                Number.isInteger(index) && Number(index) >= 0 && Number(index) < QUESTIONS.length
+              )
+              && new Set(saved.questionOrder).size === QUESTIONS.length;
+
+            if (saved.version === 1 && validOrder && saved.creditCharged === true) {
+              setQuestionOrder(saved.questionOrder.map((index: number) => QUESTIONS[index]));
+              setCurrent(Math.min(Math.max(Number(saved.current) || 0, 0), QUESTIONS.length - 1));
+              setSelected(saved.selected === null || Number.isInteger(saved.selected) ? saved.selected : null);
+              setScore(Math.max(0, Math.min(Number(saved.score) || 0, QUESTIONS.length)));
+              setFinished(saved.finished === true);
+              setTimedOut(saved.timedOut === true);
+              setRemainingSeconds(Math.max(0, Math.min(Number(saved.remainingSeconds) || 0, 20)));
+              setSaved(saved.saved === true);
+              setSaveMessage(typeof saved.saveMessage === "string" ? saved.saveMessage : "");
+              setAttemptId(Math.max(0, Number(saved.attemptId) || 0));
+              chargedAttemptRef.current = Math.max(0, Number(saved.attemptId) || 0);
+            }
+          } catch (parseError) {
+            console.warn("Could not restore saved AWS quiz progress:", parseError);
+          }
+        }
+      } catch (restoreError) {
+        console.error("Could not check AWS quiz progress:", restoreError);
+      } finally {
+        if (!cancelled) setHasRestored(true);
+      }
+    }
+
+    restoreProgress();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasRestored || !activeUserId || creditError) return;
+
+    const storageKey = `gxc-aws-quiz-progress:${activeUserId}`;
+    const order = questionOrder.map((item) =>
+      QUESTIONS.findIndex((candidate) => candidate.question === item.question)
+    );
+
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify({
+        version: 1,
+        questionOrder: order,
+        current,
+        selected,
+        score,
+        finished,
+        timedOut,
+        remainingSeconds,
+        saved,
+        saveMessage,
+        attemptId,
+        creditCharged: chargedAttemptRef.current === attemptId,
+      }));
+    } catch (storageError) {
+      console.warn("Could not save AWS quiz progress locally:", storageError);
+    }
+  }, [hasRestored, activeUserId, questionOrder, current, selected, score, finished, timedOut, remainingSeconds, saved, saveMessage, attemptId, creditError]);
+
+  useEffect(() => {
     // Charge once per quiz attempt, including Play Again. The ref prevents
     // React Strict Mode's development effect replay from charging twice.
-    if (chargedAttemptRef.current === attemptId) return;
+    if (!hasRestored) return;
+    if (chargedAttemptRef.current === attemptId) {
+      setIsStarting(false);
+      return;
+    }
     chargedAttemptRef.current = attemptId;
     let cancelled = false;
 
@@ -109,7 +204,7 @@ export default function AwsQuiz() {
     return () => {
       cancelled = true;
     };
-  }, [attemptId]);
+  }, [attemptId, hasRestored]);
 
   const question = questionOrder[current];
   const progress = ((current + 1) / QUESTIONS.length) * 100;
@@ -187,6 +282,7 @@ export default function AwsQuiz() {
 
   function restartQuiz() {
     setQuestionOrder(shuffleQuestions());
+    chargedAttemptRef.current = null;
     setIsStarting(true);
     setCreditError("");
     setCurrent(0);
