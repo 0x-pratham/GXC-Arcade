@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import GameWrapper from "../../../components/GameWrapper";
+import GameAuthGuard from "../../../components/GameAuthGuard";
 
 // Game Components
 import ReactionRush from "../../../components/ReactionRush";
@@ -21,7 +22,7 @@ interface Game {
   [key: string]: any;
 }
 
-export default function GamePlayerPage() {
+function GamePlayerContent() {
   const params = useParams();
   const gameId = params?.id;
 
@@ -160,5 +161,13 @@ export default function GamePlayerPage() {
         }
       }}
     </GameWrapper>
+  );
+}
+
+export default function GamePlayerPage() {
+  return (
+    <GameAuthGuard gameName="arcade games">
+      <GamePlayerContent />
+    </GameAuthGuard>
   );
 }
