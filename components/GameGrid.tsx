@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
-import { Play, Gamepad2 } from "lucide-react";
+import { Play, Gamepad2, LockKeyhole } from "lucide-react";
 
 interface GameGridProps {
   games: any[];
@@ -123,28 +123,25 @@ export default function GameGrid({ games, loading }: GameGridProps) {
                       "A premium arcade experience. Ready to play."}
                   </p>
 
-                  {/* Action Button */}
-                  <Link
-  href={
-    game.title === "AWS Cloud Quest"
-      ? "/aws-quiz"
-      : `/games/${game.id}`
-  }
-  className="mt-auto block"
->
-                    <div className="flex items-center justify-between w-full bg-[#f4effc] group-hover:bg-[#220849] border border-[#c7a6f3]/50 group-hover:border-[#220849] px-6 py-4 rounded-xl transition-colors duration-300">
-                      <span className="font-bold text-[#220849] group-hover:text-white transition-colors text-sm uppercase tracking-wide">
-                        Play Game
-                      </span>
-
-                      <div className="bg-white group-hover:bg-[#5f2396] text-[#5f2396] group-hover:text-white p-2 rounded-lg transition-colors duration-300">
-                        <Play
-                          size={16}
-                          className="ml-0.5 group-hover:scale-110 transition-transform"
-                        />
-                      </div>
+                  {/* Locked games remain visible, but cannot be opened. */}
+                  {game.is_locked ? (
+                    <div className="mt-auto flex items-center justify-between w-full rounded-xl border border-amber-300 bg-amber-50 px-6 py-4 text-amber-800" role="status">
+                      <span className="font-bold text-sm uppercase tracking-wide">Temporarily Locked</span>
+                      <LockKeyhole size={18} />
                     </div>
-                  </Link>
+                  ) : (
+                    <Link
+                      href={game.title === "AWS Cloud Quest" ? "/aws-quiz" : `/games/${game.id}`}
+                      className="mt-auto block"
+                    >
+                      <div className="flex items-center justify-between w-full bg-[#f4effc] group-hover:bg-[#220849] border border-[#c7a6f3]/50 group-hover:border-[#220849] px-6 py-4 rounded-xl transition-colors duration-300">
+                        <span className="font-bold text-[#220849] group-hover:text-white transition-colors text-sm uppercase tracking-wide">Play Game</span>
+                        <div className="bg-white group-hover:bg-[#5f2396] text-[#5f2396] group-hover:text-white p-2 rounded-lg transition-colors duration-300">
+                          <Play size={16} className="ml-0.5 group-hover:scale-110 transition-transform" />
+                        </div>
+                      </div>
+                    </Link>
+                  )}
                 </div>
               </motion.div>
             ))}

@@ -12,7 +12,7 @@ import {
   getAllDetailedScores // <-- Make sure to import this
 } from "../../lib/actions";
 import { useRouter } from "next/navigation";
-import { Zap, Activity, ShieldAlert } from "lucide-react";
+import { Zap, Activity, ShieldAlert, LockKeyhole, LockKeyholeOpen } from "lucide-react";
 
 export default function AdminDashboard() {
   const [users, setUsers] = useState<any[]>([]);
@@ -20,7 +20,10 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [actionMessage, setActionMessage] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
-  const [activeTab, setActiveTab] = useState<"users" | "logs">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "logs" | "games">("users");
+  const [gameAccess, setGameAccess] = useState<any[]>([]);
+  const [gameAccessLoading, setGameAccessLoading] = useState(false);
+  const [gameAccessSaving, setGameAccessSaving] = useState<string | null>(null);
   const router = useRouter();
 
   const [popupTitle, setPopupTitle] = useState("");
@@ -49,11 +52,70 @@ export default function AdminDashboard() {
       }
 
       setIsAdmin(true);
-      await refreshData();
+      await Promise.all([refreshData(), refreshGameAccess()]);
     }
     
     checkAdminAndLoadData();
   }, [router]);
+
+  const refreshGameAccess = async () => {
+    setGameAccessLoading(true);
+    try {
+      const { data: games, error: gamesError } = await supabase
+        .from("games")
+        .select("id, title, is_active")
+        .order("title", { ascending: true });
+      if (gamesError) throw gamesError;
+
+      const { data: locks, error: locksError } = await supabase
+        .from("game_access_locks")
+        .select("game_id, is_locked, locked_at");
+      if (locksError) throw locksError;
+
+      const lockMap = new Map((locks || []).map((lock: any) => [lock.game_id, lock]));
+      setGameAccess((games || []).map((game: any) => ({
+        ...game,
+        is_locked: lockMap.get(game.id)?.is_locked === true,
+        locked_at: lockMap.get(game.id)?.locked_at ?? null,
+      })));
+    } catch (error: any) {
+      showActionMessage(`❌ Couldn't load game access controls: ${error.message || "Unknown error"}`);
+    } finally {
+      setGameAccessLoading(false);
+    }
+  };
+
+  const handleToggleGameLock = async (game: any) => {
+    const nextLocked = !game.is_locked;
+    const action = nextLocked ? "lock" : "unlock";
+    if (!window.confirm(`${action === "lock" ? "Lock" : "Unlock"} ${game.title}? ${nextLocked ? "New attempts will be blocked immediately. Current games can finish." : "Members will be able to start new attempts again."}`)) return;
+
+    setGameAccessSaving(game.id);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Please sign in again.");
+
+      const { error } = await supabase.from("game_access_locks").upsert({
+        game_id: game.id,
+        is_locked: nextLocked,
+        locked_at: nextLocked ? new Date().toISOString() : null,
+        locked_by: nextLocked ? user.id : null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "game_id" });
+      if (error) throw error;
+
+      setGameAccess((previous) => previous.map((item) => item.id === game.id ? {
+        ...item,
+        is_locked: nextLocked,
+        locked_at: nextLocked ? new Date().toISOString() : null,
+      } : item));
+      showActionMessage(`✅ ${game.title} is now ${nextLocked ? "locked" : "unlocked"}.`);
+    } catch (error: any) {
+      showActionMessage(`❌ Couldn't ${action} game: ${error.message || "Unknown error"}`);
+    } finally {
+      setGameAccessSaving(null);
+    }
+  };
 
   const refreshData = async () => {
     const fetchedUsers = await getAllProfiles();
@@ -152,6 +214,12 @@ export default function AdminDashboard() {
             >
               Score Logs
             </button>
+            <button
+              onClick={() => setActiveTab("games")}
+              className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${activeTab === "games" ? "bg-[#220849] text-white shadow-md" : "text-[#220849]/60 hover:text-[#5f2396]"}`}
+            >
+              Game Access
+            </button>
           </div>
         </motion.div>
 
@@ -163,6 +231,44 @@ export default function AdminDashboard() {
           >
             {actionMessage}
           </motion.div>
+        )}
+
+        {/* TAB: ADMIN GAME ACCESS CONTROL */}
+        {activeTab === "games" && (
+          <section className="rounded-[2rem] border border-[#c7a6f3]/40 bg-white shadow-[0_5px_20px_rgba(199,166,243,0.3)] overflow-hidden">
+            <div className="flex flex-col gap-3 border-b border-[#c7a6f3]/40 bg-[#c7a6f3]/20 p-6 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="flex items-center gap-2 text-2xl font-bold font-heading text-[#220849]"><LockKeyhole size={22} /> Game Access Control</h2>
+                <p className="mt-2 text-sm font-medium text-[#220849]/65">Locking blocks new attempts immediately. Anyone already playing can finish their current game.</p>
+              </div>
+              <button onClick={refreshGameAccess} disabled={gameAccessLoading} className="rounded-xl border border-[#c7a6f3]/60 bg-white px-4 py-2 font-bold text-[#5f2396] disabled:opacity-50">
+                {gameAccessLoading ? "Refreshing..." : "Refresh"}
+              </button>
+            </div>
+            <div className="divide-y divide-[#c7a6f3]/20">
+              {gameAccessLoading && gameAccess.length === 0 ? (
+                <p className="p-8 text-center font-semibold text-[#5f2396]">Loading games...</p>
+              ) : gameAccess.length === 0 ? (
+                <p className="p-8 text-center text-[#220849]/60">No games found.</p>
+              ) : gameAccess.map((game) => (
+                <div key={game.id} className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-bold text-[#220849]">{game.title}</p>
+                    <p className="mt-1 text-xs font-semibold text-[#220849]/60">{game.is_active ? "Listed as active" : "Inactive in game catalogue"}</p>
+                    {game.is_locked && <p className="mt-1 text-xs font-semibold text-amber-700">New attempts are blocked</p>}
+                  </div>
+                  <button
+                    onClick={() => handleToggleGameLock(game)}
+                    disabled={gameAccessSaving === game.id || gameAccessLoading}
+                    className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${game.is_locked ? "border border-green-300 bg-green-50 text-green-800 hover:bg-green-100" : "border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100"}`}
+                  >
+                    {game.is_locked ? <LockKeyholeOpen size={18} /> : <LockKeyhole size={18} />}
+                    {gameAccessSaving === game.id ? "Saving..." : game.is_locked ? "Unlock Game" : "Lock Game"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
         )}
 
         {/* TAB 1: USER REGISTRY & BROADCAST */}

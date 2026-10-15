@@ -44,21 +44,71 @@ export async function logoutUser() {
   if (error) throw error;
 }
 
+export async function getGameLockState(gameId: string) {
+  const { data, error } = await supabase
+    .from("game_access_locks")
+    .select("is_locked")
+    .eq("game_id", gameId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Failed to check game lock state:", error);
+    // Fail closed: a lock check failure must never allow a new attempt.
+    return { locked: true, message: "Game access could not be verified. Please try again shortly." };
+  }
+
+  return { locked: data?.is_locked === true, message: data?.is_locked ? "This game is temporarily locked by an admin." : "" };
+}
+
+export async function setGameLockState(gameId: string, locked: boolean) {
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) throw new Error("Please sign in as an admin.");
+
+  const { error } = await supabase
+    .from("game_access_locks")
+    .upsert({
+      game_id: gameId,
+      is_locked: locked,
+      locked_at: locked ? new Date().toISOString() : null,
+      locked_by: locked ? user.id : null,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "game_id" });
+
+  if (error) throw new Error(error.message);
+}
+
 export async function getActiveGames() {
   const { data, error } = await supabase.from("games").select("*").eq("is_active", true).order("created_at", { ascending: false });
   if (error) {
     console.error("SUPABASE FETCH ERROR:", error.message, error.details);
     return [];
   }
-  return data || [];
+
+  const games = data || [];
+  if (games.length === 0) return games;
+
+  const { data: locks, error: lockError } = await supabase
+    .from("game_access_locks")
+    .select("game_id, is_locked")
+    .in("game_id", games.map((game) => game.id));
+
+  if (lockError) {
+    console.error("Failed to fetch game locks:", lockError);
+    return games.map((game) => ({ ...game, is_locked: true, lock_error: true }));
+  }
+
+  const lockMap = new Map((locks || []).map((lock) => [lock.game_id, lock.is_locked]));
+  return games.map((game) => ({ ...game, is_locked: lockMap.get(game.id) === true }));
 }
 
-export async function deductGameCredit(userId: string) {
+export async function deductGameCredit(userId: string, gameId?: string) {
   try {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return { success: false, message: "Please log in first." };
     if (user.id !== userId) return { success: false, message: "Unauthorized credit deduction." };
-    const { data, error } = await supabase.rpc("deduct_game_credit");
+    const { data, error } = gameId
+      ? await supabase.rpc("deduct_game_credit_for_game", { p_game_id: gameId })
+      : await supabase.rpc("deduct_game_credit");
     if (error) {
       console.error("Credit deduction failed:", { message: error.message, code: error.code, details: error.details, hint: error.hint });
       return { success: false, message: error.message };
