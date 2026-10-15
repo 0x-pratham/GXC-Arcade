@@ -9,7 +9,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { deductGameCredit, submitScore } from "@/lib/actions";
+import { deductGameCredit, getGameLockState, submitScore } from "@/lib/actions";
 
 const AWS_GAME_ID = "796aac6a-6cd4-48c6-af90-518bab836a84";
 
@@ -87,6 +87,7 @@ export default function AwsQuiz() {
         const storageKey = `gxc-aws-quiz-progress:${user.id}`;
         const raw = window.localStorage.getItem(storageKey);
 
+        let restoredActiveAttempt = false;
         if (raw) {
           try {
             const saved = JSON.parse(raw);
@@ -98,6 +99,7 @@ export default function AwsQuiz() {
               && new Set(saved.questionOrder).size === QUESTIONS.length;
 
             if (saved.version === 1 && validOrder && saved.creditCharged === true) {
+              restoredActiveAttempt = saved.finished !== true;
               setQuestionOrder(saved.questionOrder.map((index: number) => QUESTIONS[index]));
               setCurrent(Math.min(Math.max(Number(saved.current) || 0, 0), QUESTIONS.length - 1));
               setSelected(saved.selected === null || Number.isInteger(saved.selected) ? saved.selected : null);
@@ -112,6 +114,15 @@ export default function AwsQuiz() {
             }
           } catch (parseError) {
             console.warn("Could not restore saved AWS quiz progress:", parseError);
+          }
+        }
+
+        // A saved, unfinished attempt began before any later lock and may
+        // continue. Without one, a locked game cannot begin a fresh attempt.
+        if (!restoredActiveAttempt) {
+          const lockState = await getGameLockState(AWS_GAME_ID);
+          if (lockState.locked && !cancelled) {
+            setCreditError(lockState.message || "AWS Cloud Quest is temporarily locked by an admin.");
           }
         }
       } catch (restoreError) {
@@ -180,7 +191,12 @@ export default function AwsQuiz() {
           throw new Error("Please log in before playing.");
         }
 
-        const result = await deductGameCredit(user.id);
+        const lockState = await getGameLockState(AWS_GAME_ID);
+        if (lockState.locked) {
+          throw new Error(lockState.message || "AWS Cloud Quest is temporarily locked by an admin.");
+        }
+
+        const result = await deductGameCredit(user.id, AWS_GAME_ID);
         if (!result.success) {
           throw new Error(
             result.message || "You don't have enough credits to play."
