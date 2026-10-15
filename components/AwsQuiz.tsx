@@ -99,7 +99,7 @@ export default function AwsQuiz() {
               && new Set(saved.questionOrder).size === QUESTIONS.length;
 
             if (saved.version === 1 && validOrder && saved.creditCharged === true) {
-              restoredActiveAttempt = saved.finished !== true;
+              restoredActiveAttempt = true;
               setQuestionOrder(saved.questionOrder.map((index: number) => QUESTIONS[index]));
               setCurrent(Math.min(Math.max(Number(saved.current) || 0, 0), QUESTIONS.length - 1));
               setSelected(saved.selected === null || Number.isInteger(saved.selected) ? saved.selected : null);
