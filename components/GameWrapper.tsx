@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
-import { deductGameCredit } from "../lib/actions";
+import { deductGameCredit, getGameLockState } from "../lib/actions";
 import { Play, AlertCircle, Zap, RefreshCcw, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
@@ -24,6 +24,8 @@ export default function GameWrapper({ gameId, gameTitle, children }: GameWrapper
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
   const [finalScore, setFinalScore] = useState<number>(0);
+  const [gameLocked, setGameLocked] = useState(false);
+  const [lockMessage, setLockMessage] = useState("");
 
   useEffect(() => {
     const init = async () => {
@@ -33,6 +35,10 @@ export default function GameWrapper({ gameId, gameTitle, children }: GameWrapper
         return;
       }
       setUser(session.user);
+
+      const lockState = await getGameLockState(gameId);
+      setGameLocked(lockState.locked);
+      setLockMessage(lockState.message);
 
       const { data: profile } = await supabase
         .from("profiles")
@@ -48,20 +54,33 @@ export default function GameWrapper({ gameId, gameTitle, children }: GameWrapper
 
   // Start ya Play Again logic
   const handleStartSequence = async () => {
-  if (!user) return;
-  setStarting(true);
+    if (!user || starting) return;
+    setStarting(true);
 
-  const result = await deductGameCredit(user.id);
+    try {
+      // Re-check at every new attempt, including Play Again. A game already
+      // in "playing" state is not interrupted when an admin locks it.
+      const lockState = await getGameLockState(gameId);
+      setGameLocked(lockState.locked);
+      setLockMessage(lockState.message);
+      if (lockState.locked) {
+        setStarting(false);
+        return;
+      }
 
-  if (result.success) {
-    setCredits(result.remaining ?? null);
-    setGameState("playing");
-  } else {
-    alert("Insufficient Credits! Please top up to play.");
-  }
-
-  setStarting(false);
-};
+      const result = await deductGameCredit(user.id, gameId);
+      if (result.success) {
+        setCredits(result.remaining ?? null);
+        setGameState("playing");
+      } else {
+        alert(result.message || "Unable to start this game. Please check your credits and access.");
+      }
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Unable to start this game.");
+    } finally {
+      setStarting(false);
+    }
+  };
 
   const handleGameOver = async (score: number) => {
     setFinalScore(score);
@@ -104,6 +123,11 @@ export default function GameWrapper({ gameId, gameTitle, children }: GameWrapper
         {/* STATE 1: IDLE (Start Screen) */}
         {gameState === 'idle' && (
           <div className="flex-1 flex flex-col items-center justify-center text-center">
+            {gameLocked && (
+              <div className="mb-6 max-w-lg rounded-xl border border-amber-300 bg-amber-50 px-5 py-4 font-semibold text-amber-900" role="status">
+                {lockMessage || "This game is temporarily locked by an admin."} New attempts are disabled until it is unlocked.
+              </div>
+            )}
             <h1 className="text-3xl md:text-5xl font-black font-heading text-[#220849] mb-4">
               {gameTitle}
             </h1>
@@ -111,7 +135,7 @@ export default function GameWrapper({ gameId, gameTitle, children }: GameWrapper
               Execution requires 1 Credit. Your current balance is {credits} credits.
             </p>
             
-            {credits && credits > 0 ? (
+            {!gameLocked && credits && credits > 0 ? (
               <button 
                 onClick={handleStartSequence}
                 disabled={starting}
@@ -124,12 +148,12 @@ export default function GameWrapper({ gameId, gameTitle, children }: GameWrapper
                 )}
                 {starting ? "Initializing..." : "Start Game (-1 Credit)"}
               </button>
-            ) : (
+            ) : !gameLocked ? (
               <div className="bg-red-50 text-red-600 px-8 py-4 rounded-xl font-bold text-lg flex items-center gap-3 border border-red-200">
                 <AlertCircle size={20} />
                 Insufficient Credits
               </div>
-            )}
+            ) : null}
           </div>
         )}
 
@@ -152,7 +176,7 @@ export default function GameWrapper({ gameId, gameTitle, children }: GameWrapper
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
-              {credits && credits > 0 ? (
+              {!gameLocked && credits && credits > 0 ? (
                 <button 
                   onClick={handleStartSequence}
                   disabled={starting}
