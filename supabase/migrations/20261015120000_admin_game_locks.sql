@@ -9,6 +9,9 @@ create table if not exists public.game_access_locks (
 
 alter table public.game_access_locks enable row level security;
 
+grant select on public.game_access_locks to anon, authenticated;
+grant insert, update on public.game_access_locks to authenticated;
+
 drop policy if exists "Game locks are readable by everyone" on public.game_access_locks;
 create policy "Game locks are readable by everyone"
   on public.game_access_locks for select
@@ -76,6 +79,11 @@ begin
   return remaining_credits;
 end;
 $$;
+
+-- Prevent clients from bypassing the game-aware gate by calling the old
+-- game-agnostic credit RPC directly. The SECURITY DEFINER wrapper above can
+-- still invoke it as its owner after checking the requested game's lock.
+revoke execute on function public.deduct_game_credit() from public, anon, authenticated;
 
 revoke all on function public.deduct_game_credit_for_game(uuid) from public;
 grant execute on function public.deduct_game_credit_for_game(uuid) to authenticated;
