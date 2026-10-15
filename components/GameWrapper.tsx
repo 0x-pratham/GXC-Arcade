@@ -50,7 +50,7 @@ export default function GameWrapper({ gameId, gameTitle, children }: GameWrapper
       setLoading(false);
     };
     init();
-  }, [router]);
+  }, [router, gameId]);
 
   // Start ya Play Again logic
   const handleStartSequence = async () => {
